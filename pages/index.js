@@ -14,8 +14,6 @@ import styles from "../styles/Home.module.css";
 const contractABI = abi.abi;
 
 const sendMessage = async (message) => {
-  const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-
   const provider = new ethers.BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();
 
@@ -42,61 +40,41 @@ const verifyMessage = async (message) => {
 
   const params = [msgParams, from];
   const method = "eth_signTypedData";
-  web3.currentProvider.sendAsync(
-    {
-      method,
-      params,
-      from,
-    },
-    async function (err, result) {
-      if (err) {
-        console.dir(err);
-        return;
-      }
 
-      if (result.error) {
-        console.dir(result.error.message);
-        return;
-      }
+  const signature = await ethereum.request({
+    method,
+    params,
+    from,
+  });
 
-      let { result: sign } = result;
-      console.log("EthSignTyped SIGNED:" + JSON.stringify(sign));
+  console.log("EthSignTyped SIGNED:" + JSON.stringify(signature));
 
-      const recovered = recoverTypedSignature({
-        data: msgParams,
-        signature: result.result,
-        version: "V1",
-      });
+  const recovered = recoverTypedSignature({
+    data: msgParams,
+    signature,
+    version: "V1",
+  });
 
-      if (toChecksumAddress(recovered) !== toChecksumAddress(from)) {
-        console.log(
-          "Failed to verify signer when comparing " + result + " to " + from
-        );
-        return;
-      }
+  if (toChecksumAddress(recovered) !== toChecksumAddress(from)) {
+    console.log(
+      "Failed to verify signer when comparing " + signature + " to " + from
+    );
+    return;
+  }
 
-      console.log("!!Successfully recovered signer as " + from);
+  console.log("!!Successfully recovered signer as " + from);
 
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
 
-      const contract = new ethers.Contract(
-        contractAddress,
-        contractABI,
-        signer
-      );
+  const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-      const response = await contract.verifyAddressFromTypedSign(
-        sign,
-        message,
-        from
-      );
-      console.log({ response });
-
-      const msg = await contract.getLastMessage();
-      console.log({ msg });
-    }
+  const response = await contract.verifyAddressFromTypedSign(
+    signature,
+    message,
+    from
   );
+  console.log(`address verified: ${response}`);
 };
 
 const messageConverter = (data) => ({
@@ -110,10 +88,6 @@ export default function Home() {
   const [message, setMessage] = useState();
   const [userMessage, setUserMessage] = useState();
 
-  const clickHandler = async () => {
-    await verifyMessage(userMessage).catch((error) => console.log(error));
-  };
-
   const onNewMessage = (from, timestamp, message) => {
     console.log("NewMessage", from, timestamp, message);
   };
@@ -124,6 +98,7 @@ export default function Home() {
 
   const getLastMessage = async () => {
     if (!contract) {
+      console.log("contract not defined");
       return;
     }
 
@@ -131,11 +106,35 @@ export default function Home() {
     setMessage(messageConverter(response));
   };
 
+  const sendMessageHelper = async () => {
+    await sendMessage(userMessage);
+    await getLastMessage();
+    await setUserMessage("");
+  };
+
+  const signMessageClickHandler = async () => {
+    try {
+      await verifyMessage(userMessage);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const sendMessageClickHandler = async () => {
-    await sendMessage(userMessage)
-      .catch((error) => console.log(error))
-      .then(() => getLastMessage())
-      .then(() => setUserMessage(""));
+    try {
+      await sendMessageHelper();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const signAndSendMessageClickHandler = async () => {
+    try {
+      await verifyMessage(userMessage);
+      await sendMessageHelper();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const init = async () => {
@@ -179,8 +178,11 @@ export default function Home() {
         </div>
 
         <p className={styles.description}>
-          <button onClick={clickHandler}>Sign V1</button>
+          <button onClick={signMessageClickHandler}>Sign V1</button>
           <button onClick={sendMessageClickHandler}>Send Message</button>
+          <button onClick={signAndSendMessageClickHandler}>
+            Sign and send
+          </button>
         </p>
       </main>
 
