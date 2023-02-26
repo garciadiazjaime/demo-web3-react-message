@@ -1,81 +1,15 @@
-const contractAddress = "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690";
-
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import Head from "next/head";
-import { ethers } from "ethers";
-import { recoverTypedSignature } from "@metamask/eth-sig-util";
-const ethJSUtil = require("ethereumjs-util");
 
-const { toChecksumAddress } = ethJSUtil;
-import abi from "../utils/SignedMessage.json";
+import {
+  getContract,
+  getLastMessage,
+  verifyMessage,
+  sendMessage,
+} from "../utils/contract";
 
 import styles from "../styles/Home.module.css";
-
-const contractABI = abi.abi;
-
-const sendMessage = async (message) => {
-  const provider = new ethers.BrowserProvider(window.ethereum);
-  const signer = await provider.getSigner();
-
-  const contract = new ethers.Contract(contractAddress, contractABI, signer);
-
-  const txn = await contract.sendMessage(message);
-  console.log("Mining...", txn.hash);
-
-  await txn.wait();
-  console.log("Mined -- ", txn.hash);
-};
-
-const verifyMessage = async (message) => {
-  const msgParams = [
-    {
-      type: "string",
-      name: "Message",
-      value: message,
-    },
-  ];
-
-  const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-  const from = accounts[0];
-
-  const params = [msgParams, from];
-  const method = "eth_signTypedData";
-
-  const signature = await ethereum.request({
-    method,
-    params,
-    from,
-  });
-
-  console.log("EthSignTyped SIGNED:" + JSON.stringify(signature));
-
-  const recovered = recoverTypedSignature({
-    data: msgParams,
-    signature,
-    version: "V1",
-  });
-
-  if (toChecksumAddress(recovered) !== toChecksumAddress(from)) {
-    console.log(
-      "Failed to verify signer when comparing " + signature + " to " + from
-    );
-    return;
-  }
-
-  console.log("!!Successfully recovered signer as " + from);
-
-  const provider = new ethers.BrowserProvider(window.ethereum);
-  const signer = await provider.getSigner();
-
-  const contract = new ethers.Contract(contractAddress, contractABI, signer);
-
-  const response = await contract.verifyAddressFromTypedSign(
-    signature,
-    message,
-    from
-  );
-  console.log(`address verified: ${response}`);
-};
 
 const messageConverter = (data) => ({
   user: data[0],
@@ -84,13 +18,10 @@ const messageConverter = (data) => ({
 });
 
 export default function Home() {
+  const [loading, setLoading] = useState(false)
   const [contract, setContract] = useState();
   const [message, setMessage] = useState();
   const [userMessage, setUserMessage] = useState();
-
-  const onNewMessage = (from, timestamp, message) => {
-    console.log("NewMessage", from, timestamp, message);
-  };
 
   const userMessageOnChange = (event) => {
     if (event.target.value.length > 140) {
@@ -100,19 +31,16 @@ export default function Home() {
     setUserMessage(event.target.value);
   };
 
-  const getLastMessage = async () => {
-    if (!contract) {
-      console.log("contract not defined");
-      return;
-    }
-
-    const response = await contract.getLastMessage();
+  const updateLastMessage = async () => {
+    setLoading(true)
+    const response = await getLastMessage();
+    setLoading(false)
     setMessage(messageConverter(response));
   };
 
   const sendMessageHelper = async () => {
+    setLoading(true)
     await sendMessage(userMessage);
-    await getLastMessage();
     await setUserMessage("");
   };
 
@@ -141,12 +69,16 @@ export default function Home() {
     }
   };
 
+  const onNewMessage = async (from, timestamp, message) => {
+    console.log("NewMessage", from, timestamp, message);
+    setLoading(true)
+    await updateLastMessage();
+    setLoading(false)
+  };
+
   const init = async () => {
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    const contract = await getContract();
 
-    const signer = await provider.getSigner();
-
-    const contract = new ethers.Contract(contractAddress, contractABI, signer);
     setContract(contract);
   };
 
@@ -155,7 +87,7 @@ export default function Home() {
       return;
     }
 
-    getLastMessage();
+    updateLastMessage();
 
     contract.on("NewMessage", onNewMessage);
     return () => {
@@ -170,18 +102,26 @@ export default function Home() {
   return (
     <div className={styles.container}>
       <Head>
-        <title>Create Next App</title>
+        <title>Sign and Send a Message</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      <nav>
+        <Link href="/">Home</Link>
+        <Link href="/activity">Activity</Link>
+      </nav>
+
       <main>
-        <h1 className={styles.title}>{message && message.message}</h1>
+        <h1 className={styles.title}>{message?.message}</h1>
 
         <div>
           <textarea onChange={userMessageOnChange} value={userMessage} />
           <div>
-            <small>max 140 ({userMessage.length})</small>
+            <small>max 140 ({userMessage?.length || 0})</small>
           </div>
+        </div>
+        <div>
+          {loading && <div>loading...</div>}
         </div>
 
         <p className={styles.description}>
