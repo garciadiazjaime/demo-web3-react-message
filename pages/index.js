@@ -93,6 +93,10 @@ export default function Home() {
   };
 
   const userMessageOnChange = (event) => {
+    if (event.target.value.length > 140) {
+      return;
+    }
+
     setUserMessage(event.target.value);
   };
 
@@ -175,6 +179,9 @@ export default function Home() {
 
         <div>
           <textarea onChange={userMessageOnChange} value={userMessage} />
+          <div>
+            <small>max 140 ({userMessage.length})</small>
+          </div>
         </div>
 
         <p className={styles.description}>
