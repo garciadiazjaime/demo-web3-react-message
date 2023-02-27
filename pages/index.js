@@ -18,12 +18,79 @@ const messageConverter = (data) => ({
 });
 
 export default function Home() {
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const [contract, setContract] = useState();
   const [message, setMessage] = useState();
   const [userMessage, setUserMessage] = useState();
+  const [alert, setAlert] = useState();
 
-  const userMessageOnChange = (event) => {
+  const updateLastMessage = async () => {
+    setLoading(true);
+
+    const response = await getLastMessage();
+    setLoading(false);
+
+    setMessage(messageConverter(response));
+  };
+
+  const sendMessageHelper = async () => {
+    setLoading(true);
+    await sendMessage(userMessage);
+    await setUserMessage("");
+  };
+
+  const isMessageEmpty = () => {
+    setAlert("");
+    if (!userMessage) {
+      setAlert("message is empty");
+      return;
+    }
+
+    return !userMessage;
+  };
+
+  const signMessageClickHandler = async () => {
+    if (isMessageEmpty()) {
+      return;
+    }
+
+    try {
+      await verifyMessage(userMessage);
+    } catch (error) {
+      setAlert("an error happened, please try again later");
+      console.log(error);
+    }
+  };
+
+  const sendMessageClickHandler = async () => {
+    if (isMessageEmpty()) {
+      return;
+    }
+
+    try {
+      await sendMessageHelper();
+    } catch (error) {
+      setLoading(false);
+      setAlert("an error happened, please try again later");
+      console.log(error);
+    }
+  };
+
+  const signAndSendMessageClickHandler = async () => {
+    if (isMessageEmpty()) {
+      return;
+    }
+
+    try {
+      await verifyMessage(userMessage);
+      await sendMessageHelper();
+    } catch (error) {
+      setAlert("an error happened, please try again later");
+      console.log(error);
+    }
+  };
+
+  const onUserMessageChange = (event) => {
     if (event.target.value.length > 140) {
       return;
     }
@@ -31,49 +98,10 @@ export default function Home() {
     setUserMessage(event.target.value);
   };
 
-  const updateLastMessage = async () => {
-    setLoading(true)
-    const response = await getLastMessage();
-    setLoading(false)
-    setMessage(messageConverter(response));
-  };
-
-  const sendMessageHelper = async () => {
-    setLoading(true)
-    await sendMessage(userMessage);
-    await setUserMessage("");
-  };
-
-  const signMessageClickHandler = async () => {
-    try {
-      await verifyMessage(userMessage);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const sendMessageClickHandler = async () => {
-    try {
-      await sendMessageHelper();
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const signAndSendMessageClickHandler = async () => {
-    try {
-      await verifyMessage(userMessage);
-      await sendMessageHelper();
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const onNewMessage = async (from, timestamp, message) => {
     console.log("NewMessage", from, timestamp, message);
-    setLoading(true)
+
     await updateLastMessage();
-    setLoading(false)
   };
 
   const init = async () => {
@@ -115,14 +143,13 @@ export default function Home() {
         <h1 className={styles.title}>{message?.message}</h1>
 
         <div>
-          <textarea onChange={userMessageOnChange} value={userMessage} />
+          <textarea onChange={onUserMessageChange} value={userMessage} />
           <div>
             <small>max 140 ({userMessage?.length || 0})</small>
           </div>
         </div>
-        <div>
-          {loading && <div>loading...</div>}
-        </div>
+        <div>{loading && <div>loading...</div>}</div>
+        <div>{alert}</div>
 
         <p className={styles.description}>
           <button onClick={signMessageClickHandler}>Sign V1</button>

@@ -6,7 +6,7 @@ import { toChecksumAddress } from "ethereumjs-util";
 import abi from "./SignedMessage.json";
 
 const contractABI = abi.abi;
-const contractAddress = "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690";
+const contractAddress = "0x4F4c25bDc3f0621A6299BE5791A6410b337524aD";
 
 const messageConverter = (data) => ({
   user: data[0],
