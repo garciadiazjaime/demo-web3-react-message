@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import Head from "next/head";
 
+import Menu from "../components/Menu";
+import Loading from "../components/Loading";
 import {
   getContract,
   getLastMessage,
@@ -9,7 +10,9 @@ import {
   sendMessage,
 } from "../utils/contract";
 
-import styles from "../styles/Home.module.css";
+import styles from "../styles/Main.module.css";
+
+const MAX_LENGTH = 140;
 
 const messageConverter = (data) => ({
   user: data[0],
@@ -35,15 +38,16 @@ export default function Home() {
 
   const sendMessageHelper = async () => {
     setLoading(true);
+    setAlert(["hold tight, sending data to blockchain :)", "warning"])
     await sendMessage(userMessage);
     await setUserMessage("");
+    setAlert(["message sent!", "success"])
   };
 
   const isMessageEmpty = () => {
-    setAlert("");
+    setAlert();
     if (!userMessage) {
-      setAlert("message is empty");
-      return;
+      setAlert(["message empty"]);
     }
 
     return !userMessage;
@@ -55,10 +59,12 @@ export default function Home() {
     }
 
     try {
-      await verifyMessage(userMessage);
+      const signature = await verifyMessage(userMessage);
+      setAlert([`Message signed: ${signature}`, "success"]);
     } catch (error) {
-      setAlert("an error happened, please try again later");
+      setAlert(["an error happened, please try again later"]);
       console.log(error);
+      return;
     }
   };
 
@@ -71,7 +77,7 @@ export default function Home() {
       await sendMessageHelper();
     } catch (error) {
       setLoading(false);
-      setAlert("an error happened, please try again later");
+      setAlert(["an error happened, please try again later"]);
       console.log(error);
     }
   };
@@ -85,13 +91,13 @@ export default function Home() {
       await verifyMessage(userMessage);
       await sendMessageHelper();
     } catch (error) {
-      setAlert("an error happened, please try again later");
+      setAlert(["an error happened, please try again later"]);
       console.log(error);
     }
   };
 
   const onUserMessageChange = (event) => {
-    if (event.target.value.length > 140) {
+    if (event.target.value.length > MAX_LENGTH) {
       return;
     }
 
@@ -134,64 +140,41 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <nav>
-        <Link href="/">Home</Link>
-        <Link href="/activity">Activity</Link>
-      </nav>
+      <Menu />
 
-      <main>
-        <h1 className={styles.title}>{message?.message}</h1>
+      <main className={styles.main}>
+        <h1 className={styles.banner}>{message?.message || "..."}</h1>
 
-        <div>
-          <textarea onChange={onUserMessageChange} value={userMessage} />
-          <div>
-            <small>max 140 ({userMessage?.length || 0})</small>
-          </div>
+        <textarea
+          className={styles.messageInput}
+          onChange={onUserMessageChange}
+          value={userMessage}
+          maxLength={MAX_LENGTH}
+          placeholder={"say something to the world ^.^"}
+        />
+
+        <div className={styles.limitLength}>
+          max 140 ({userMessage?.length || 0})
         </div>
-        <div>{loading && <div>loading...</div>}</div>
-        <div>{alert}</div>
 
-        <p className={styles.description}>
-          <button onClick={signMessageClickHandler}>Sign V1</button>
+        <div className={styles.control}>
+          <button onClick={signMessageClickHandler}>Sign</button>
           <button onClick={sendMessageClickHandler}>Send Message</button>
           <button onClick={signAndSendMessageClickHandler}>
             Sign and send
           </button>
-        </p>
+        </div>
+
+        <div
+          className={`${styles[alert && alert[1] || "error"]} ${
+            styles.alert
+          }`}
+        >
+          {alert && alert[0]}
+        </div>
       </main>
 
-      <style jsx>{`
-        main {
-          padding: 5rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-        code {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-      `}</style>
-
-      <style jsx global>{`
-        html,
-        body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
-        }
-        * {
-          box-sizing: border-box;
-        }
-      `}</style>
+      <Loading loading={loading} />
     </div>
   );
 }

@@ -1,0 +1,14 @@
+.menu {
+    padding: 12px 0;
+}
+
+.menu a {
+    color: black;
+    text-decoration: none;
+    border: 1px solid black;
+    padding: 12px 24px;
+}
+
+.menu a:first-child {
+    margin-right: 12px;
+}

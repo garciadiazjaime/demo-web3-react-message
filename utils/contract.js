@@ -6,13 +6,16 @@ import { toChecksumAddress } from "ethereumjs-util";
 import abi from "./SignedMessage.json";
 
 const contractABI = abi.abi;
-const contractAddress = "0x4F4c25bDc3f0621A6299BE5791A6410b337524aD";
+export const networkURL = 'https://goerli.etherscan.io'
+export const contractAddress = "0x4F4c25bDc3f0621A6299BE5791A6410b337524aD";
 
 const messageConverter = (data) => ({
   user: data[0],
   message: data[1],
   date: new Date(parseInt(data[2])),
 });
+
+export const shortSha = (address) => `${address.slice(0, 6)}...${address.slice(-6)}`;
 
 export const getContract = async () => {
   const provider = new ethers.BrowserProvider(window.ethereum);
@@ -82,6 +85,8 @@ export const verifyMessage = async (message) => {
     from
   );
   console.log(`address verified: ${response}`);
+
+  return signature;
 };
 
 export const sendMessage = async (message) => {
