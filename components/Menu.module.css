@@ -12,3 +12,7 @@
 .menu a:first-child {
     margin-right: 12px;
 }
+
+.menu a.active {
+    text-decoration: underline;
+}
