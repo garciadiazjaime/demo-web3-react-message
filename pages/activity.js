@@ -3,13 +3,23 @@ import Head from "next/head";
 
 import Menu from "../components/Menu";
 import Loading from "../components/Loading";
-import { networkURL, contractAddress, shortSha, getContract, getActivity } from "../utils/contract";
+import Alert from "../components/Alert";
+
+import {
+  networkURL,
+  contractAddress,
+  shortSha,
+  getContract,
+  getActivity,
+} from "../utils/contract";
+
 import styles from "../styles/Main.module.css";
 
 export default function Activity() {
   const [loading, setLoading] = useState(false);
   const [contract, setContract] = useState();
   const [activity, setActivity] = useState([]);
+  const [alert, setAlert] = useState();
 
   const getActivityHelper = async () => {
     setLoading(true);
@@ -21,6 +31,11 @@ export default function Activity() {
   };
 
   const init = async () => {
+    if (!window.ethereum) {
+      setAlert(["Please install MetaMask", "error"]);
+      return;
+    }
+
     await getActivityHelper();
 
     const contract = await getContract();
@@ -58,23 +73,19 @@ export default function Activity() {
 
       <main className={styles.main}>
         <h1>
-          <a
-            href={`${networkURL}/address/${contractAddress}`}
-            target="_blank"
-          >
+          <a href={`${networkURL}/address/${contractAddress}`} target="_blank">
             Contract Activity 🔗
           </a>
         </h1>
+
+        <Alert alert={alert} />
 
         {activity.map((item, index) => {
           return (
             <div key={index} className={styles.message}>
               <strong>{item.message}</strong>
 
-              <a
-                href={`${networkURL}/address/${item.user}`}
-                target="_blank"
-              >
+              <a href={`${networkURL}/address/${item.user}`} target="_blank">
                 {shortSha(item.user)} 🔗
               </a>
 

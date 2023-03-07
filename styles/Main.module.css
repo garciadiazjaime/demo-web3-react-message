@@ -10,8 +10,8 @@
   border: 1px solid black;
   width: 100%;
   font-size: 48px;
-  box-shadow: 0 0 1px 1px #CCC;
-  height: calc(100vh * .56);
+  box-shadow: 0 0 1px 1px #ccc;
+  height: calc(100vh * 0.56);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -60,26 +60,6 @@
   margin: 12px 0;
   opacity: 0.6;
   display: block;
-}
-
-.alert {
-  margin-top: 14px;
-  opacity: 0.9;
-  word-break: break-word;
-  width: 100%;
-  font-size: 20px;
-}
-
-.error {
-  color: indianred;
-}
-
-.success {
-  color:forestgreen;
-}
-
-.warning {
-  color: midnightblue;
 }
 
 .transaction {

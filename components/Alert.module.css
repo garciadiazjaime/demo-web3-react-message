@@ -1,0 +1,19 @@
+.alert {
+  margin-top: 14px;
+  opacity: 0.9;
+  word-break: break-word;
+  width: 100%;
+  font-size: 20px;
+}
+
+.error {
+  color: indianred;
+}
+
+.success {
+  color: forestgreen;
+}
+
+.warning {
+  color: midnightblue;
+}
