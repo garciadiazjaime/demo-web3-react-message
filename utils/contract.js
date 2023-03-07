@@ -6,7 +6,7 @@ import { toChecksumAddress } from "ethereumjs-util";
 import abi from "./SignedMessage.json";
 
 const contractABI = abi.abi;
-export const networkURL = 'https://goerli.etherscan.io'
+export const networkURL = "https://goerli.etherscan.io";
 export const contractAddress = "0x4F4c25bDc3f0621A6299BE5791A6410b337524aD";
 
 const messageConverter = (data) => ({
@@ -15,7 +15,8 @@ const messageConverter = (data) => ({
   date: new Date(parseInt(data[2])),
 });
 
-export const shortSha = (address) => `${address.slice(0, 6)}...${address.slice(-6)}`;
+export const shortSha = (address) =>
+  `${address.slice(0, 6)}...${address.slice(-6)}`;
 
 export const getContract = async () => {
   const provider = new ethers.BrowserProvider(window.ethereum);
@@ -95,6 +96,5 @@ export const sendMessage = async (message) => {
   const txn = await contract.sendMessage(message);
   console.log("Mining...", txn.hash);
 
-  await txn.wait();
-  console.log("Mined -- ", txn.hash);
+  return txn;
 };

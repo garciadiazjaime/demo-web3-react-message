@@ -4,6 +4,8 @@ import Head from "next/head";
 import Menu from "../components/Menu";
 import Loading from "../components/Loading";
 import {
+  networkURL,
+  shortSha,
   getContract,
   getLastMessage,
   verifyMessage,
@@ -26,6 +28,7 @@ export default function Home() {
   const [message, setMessage] = useState();
   const [userMessage, setUserMessage] = useState();
   const [alert, setAlert] = useState();
+  const [transaction, setTransaction] = useState("");
 
   const updateLastMessage = async () => {
     setLoading(true);
@@ -37,24 +40,40 @@ export default function Home() {
   };
 
   const sendMessageHelper = async () => {
+    setTransaction("");
+    setAlert(["Please confirm the transaction", "warning"]);
+    const txn = await sendMessage(userMessage);
+
     setLoading(true);
-    setAlert(["hold tight, sending data to blockchain :)", "warning"])
-    await sendMessage(userMessage);
+    setAlert([`hold tight, saving data to blockchain :)`, "warning"]);
+    setTransaction(txn.hash);
+
+    await txn.wait();
+    console.log("Mined -- ", txn.hash);
+
     await setUserMessage("");
-    setAlert(["message sent!", "success"])
+    setAlert(["message saved!", "success"]);
   };
 
-  const isMessageEmpty = () => {
+  const isValid = () => {
     setAlert();
+
+    if (loading) {
+      setAlert(["transaction in progress, please wait", "warning"]);
+      return false;
+    }
+
+    setTransaction("");
+
     if (!userMessage) {
       setAlert(["message empty"]);
     }
 
-    return !userMessage;
+    return !!userMessage;
   };
 
   const signMessageClickHandler = async () => {
-    if (isMessageEmpty()) {
+    if (!isValid()) {
       return;
     }
 
@@ -69,7 +88,7 @@ export default function Home() {
   };
 
   const sendMessageClickHandler = async () => {
-    if (isMessageEmpty()) {
+    if (!isValid()) {
       return;
     }
 
@@ -83,7 +102,7 @@ export default function Home() {
   };
 
   const signAndSendMessageClickHandler = async () => {
-    if (isMessageEmpty()) {
+    if (!isValid()) {
       return;
     }
 
@@ -166,12 +185,21 @@ export default function Home() {
         </div>
 
         <div
-          className={`${styles[alert && alert[1] || "error"]} ${
+          className={`${styles[(alert && alert[1]) || "error"]} ${
             styles.alert
           }`}
         >
           {alert && alert[0]}
         </div>
+
+        {transaction && (
+          <div className={styles.transaction}>
+            Transaction:
+            <a href={`${networkURL}/tx/${transaction}`} target="_blank">
+              {shortSha(transaction)} 🔗
+            </a>
+          </div>
+        )}
       </main>
 
       <Loading loading={loading} />

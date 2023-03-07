@@ -81,3 +81,9 @@
 .warning {
   color: midnightblue;
 }
+
+.transaction {
+  margin: 12px 0;
+  text-align: left;
+  width: 100%;
+}
